@@ -7,12 +7,18 @@ Partner sharing includes:
 - Access to all non-archived and trashed photos and videos.
 - Access to all metadata, including GPS information.
 - Access to share assets via shared links, albums, etc.
+- Optionally, access to all your albums (see [Share All Albums](#share-all-albums) below)
 
 Partner sharing does _not_ include:
 
-- Already existing partner albums
 - If an asset is favorited
 - People and facial recognition data
+
+:::note
+
+If you don't enable "Share all albums", your partner will not have access to your existing albums. You can still share individual albums with them later from the Albums page.
+
+:::
 
 :::note
 
@@ -58,3 +64,15 @@ From the partner’s view, toggle the button
 In order to remove a partner, you can go to `User > Account Settings > Sharing` and click on the X button.
 
 <img src={require('./img/partner-sharing-7.webp').default} width="70%" title='Remove Partner' />
+
+## Share All Albums
+
+When sharing your library with a partner, you can optionally enable "Share all albums" to automatically share all your existing albums with that partner. This gives your partner editor access to all your albums, allowing them to add photos to your albums as well.
+
+:::tip
+
+If you have many albums and want your partner to have access to all of them, enabling this option saves you from manually sharing each album one by one.
+
+:::
+
+You can toggle this option at any time from the Partner Sharing settings page.
