@@ -47,7 +47,7 @@ export class PartnerController {
   }
 
   @Put(':id')
-  @Authenticated({ permission: Permission.PartnerUpdate })
+  @Authenticated()
   @Endpoint({
     summary: 'Update a partner',
     description: "Specify whether a partner's assets should appear in the user's timeline and whether to share all albums with the partner.",

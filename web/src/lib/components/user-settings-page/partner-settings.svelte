@@ -110,25 +110,25 @@
     }
   };
 
-  const handleShowOnTimelineChanged = async (partner: PartnerSharing, inTimeline: boolean) => {
+const handleShowOnTimelineChanged = async (partner: PartnerSharing, inTimeline: boolean) => {
     try {
-      await updatePartner({ id: partner.user.id, partnerUpdateDto: { inTimeline, shareAllAlbums: partner.shareAllAlbums } });
+        await updatePartner({ id: partner.user.id, partnerUpdateDto: { inTimeline } });
 
-      partner.inTimeline = inTimeline;
+        partner.inTimeline = inTimeline;
     } catch (error) {
-      handleError(error, $t('errors.unable_to_update_timeline_display_status'));
+        handleError(error, $t('errors.unable_to_update_timeline_display_status'));
     }
-  };
+};
 
-  const handleShareAllAlbumsChanged = async (partner: PartnerSharing, shareAllAlbums: boolean) => {
+const handleShareAllAlbumsChanged = async (partner: PartnerSharing, shareAllAlbums: boolean) => {
     try {
-      await updatePartner({ id: partner.user.id, partnerUpdateDto: { inTimeline: partner.inTimeline, shareAllAlbums } });
+        await updatePartner({ id: partner.user.id, partnerUpdateDto: { shareAllAlbums } });
 
-      partner.shareAllAlbums = shareAllAlbums;
+        partner.shareAllAlbums = shareAllAlbums;
     } catch (error) {
-      handleError(error, $t('errors.unable_to_update_share_all_albums_status'));
+        handleError(error, $t('errors.unable_to_update_share_all_albums_status'));
     }
-  };
+};
 </script>
 
 <section class="my-4">
@@ -162,48 +162,48 @@
         </div>
 
         <div class="dark:text-gray-200 text-immich-dark-gray">
-          <!-- I am sharing my assets with this user -->
-          {#if partner.sharedByMe}
-            <hr class="my-4 border border-gray-200 dark:border-gray-700" />
-            <Text class="my-4" size="small" fontWeight="medium">
-              {$t('shared_with_partner', { values: { partner: partner.user.name } })}
-            </Text>
-            <Text size="tiny" fontWeight="medium"
-              >{$t('partner_can_access', { values: { partner: partner.user.name } })}</Text
-            >
-            <ul class="text-sm">
-              <li class="flex gap-2 place-items-center py-1 mt-2">
-                <Icon icon={mdiCheck} />
-                {$t('partner_can_access_assets')}
-              </li>
-              <li class="flex gap-2 place-items-center py-1">
-                <Icon icon={mdiCheck} />
-                {$t('partner_can_access_location')}
-              </li>
-            </ul>
-          {/if}
+<!-- I am sharing my assets with this user -->
+		{#if partner.sharedByMe}
+			<hr class="my-4 border border-gray-200 dark:border-gray-700" />
+			<Text class="my-4" size="small" fontWeight="medium">
+				{$t('shared_with_partner', { values: { partner: partner.user.name } })}
+			</Text>
+			<Text size="tiny" fontWeight="medium"
+				>{$t('partner_can_access', { values: { partner: partner.user.name } })}</Text
+			>
+			<ul class="text-sm">
+				<li class="flex gap-2 place-items-center py-1 mt-2">
+					<Icon icon={mdiCheck} />
+					{$t('partner_can_access_assets')}
+				</li>
+				<li class="flex gap-2 place-items-center py-1">
+					<Icon icon={mdiCheck} />
+					{$t('partner_can_access_location')}
+				</li>
+			</ul>
 
-          <!-- this user is sharing assets with me -->
-          {#if partner.sharedWithMe}
-            <hr class="my-4 border border-gray-200 dark:border-gray-700" />
-            <Text class="my-4" size="small" fontWeight="medium">
-              {$t('shared_from_partner', { values: { partner: partner.user.name } })}
-            </Text>
-
-            <SettingSwitch
-              title={$t('show_in_timeline')}
-              subtitle={$t('show_in_timeline_setting_description')}
-              bind:checked={partner.inTimeline}
-              onToggle={(isChecked: boolean) => handleShowOnTimelineChanged(partner, isChecked)}
+<SettingSwitch
+                title={`Share all albums`}
+                subtitle={`Share all your albums with ${partner.user.name}`}
+                bind:checked={partner.shareAllAlbums}
+                onToggle={(isChecked: boolean) => handleShareAllAlbumsChanged(partner, isChecked)}
             />
+		{/if}
 
-            <SettingSwitch
-              title={$t('share_all_albums')}
-              subtitle={$t('share_all_albums_setting_description')}
-              bind:checked={partner.shareAllAlbums}
-              onToggle={(isChecked: boolean) => handleShareAllAlbumsChanged(partner, isChecked)}
-            />
-          {/if}
+<!-- this user is sharing assets with me -->
+		{#if partner.sharedWithMe}
+			<hr class="my-4 border border-gray-200 dark:border-gray-700" />
+			<Text class="my-4" size="small" fontWeight="medium">
+				{$t('shared_from_partner', { values: { partner: partner.user.name } })}
+			</Text>
+
+			<SettingSwitch
+				title={$t('show_in_timeline')}
+				subtitle={$t('show_in_timeline_setting_description')}
+				bind:checked={partner.inTimeline}
+				onToggle={(isChecked: boolean) => handleShowOnTimelineChanged(partner, isChecked)}
+			/>
+		{/if}
         </div>
       </div>
     {/each}

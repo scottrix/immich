@@ -39,22 +39,60 @@ export class PartnerService extends BaseService {
       .map((partner) => this.mapPartner(partner, direction));
   }
 
-  async update(auth: AuthDto, sharedById: string, dto: PartnerUpdateDto): Promise<PartnerResponseDto> {
-    await this.requireAccess({ auth, permission: Permission.PartnerUpdate, ids: [sharedById] });
-    const partnerId: PartnerIds = { sharedById, sharedWithId: auth.user.id };
+async update(auth: AuthDto, partnerId: string, dto: PartnerUpdateDto): Promise<PartnerResponseDto> {
+    // Debug: log what we received
+    console.log('PartnerUpdateDto received:', JSON.stringify(dto));
 
-    const entity = await this.partnerRepository.update(partnerId, { 
-      inTimeline: dto.inTimeline,
-      shareAllAlbums: dto.shareAllAlbums
+    // Check if I'm sharing with this partner (I'm the sharer, they're sharedWith)
+    const meSharing = await this.partnerRepository.get({
+        sharedById: auth.user.id,
+        sharedWithId: partnerId,
     });
-    
-    // If shareAllAlbums is being enabled, share all albums with the partner
-    if (dto.shareAllAlbums) {
-      await this.shareAllAlbumsWithPartner(auth, sharedById);
+
+    // Check if this partner is sharing with me (they're the sharer, I'm sharedWith)
+    const themSharing = await this.partnerRepository.get({
+        sharedById: partnerId,
+        sharedWithId: auth.user.id,
+    });
+
+    // shareAllAlbums should update the partner relationship where I'm the sharer
+    // inTimeline should update the partner relationship where they're the sharer
+
+    let entity;
+    let direction: PartnerDirection;
+
+    if (dto.shareAllAlbums !== undefined) {
+        // shareAllAlbums is for when I'm sharing with someone
+        // Need to verify the partner relationship exists where I'm the sharer
+        if (!meSharing) {
+            throw new BadRequestException('Partner relationship not found');
+        }
+        entity = await this.partnerRepository.update(
+            { sharedById: auth.user.id, sharedWithId: partnerId },
+            { shareAllAlbums: dto.shareAllAlbums },
+        );
+        if (dto.shareAllAlbums) {
+            await this.shareAllAlbumsWithPartner(auth, partnerId);
+        }
+        direction = PartnerDirection.SharedBy;
+    } else if (dto.inTimeline !== undefined) {
+        // inTimeline is for when someone is sharing with me
+        // Use standard access check for this case
+        await this.requireAccess({ auth, permission: Permission.PartnerUpdate, ids: [partnerId] });
+        if (!themSharing) {
+            throw new BadRequestException('Partner relationship not found');
+        }
+        entity = await this.partnerRepository.update(
+            { sharedById: partnerId, sharedWithId: auth.user.id },
+            { inTimeline: dto.inTimeline },
+        );
+        direction = PartnerDirection.SharedWith;
+    } else {
+        throw new BadRequestException('No valid update fields provided');
     }
-    
-    return this.mapPartner(entity, PartnerDirection.SharedWith);
-  }
+
+    return this.mapPartner(entity, direction);
+}
 
   private async shareAllAlbumsWithPartner(auth: AuthDto, partnerId: string): Promise<void> {
     // Get all albums owned by the current user
