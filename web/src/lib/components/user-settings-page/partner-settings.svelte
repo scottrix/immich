@@ -22,6 +22,7 @@
     sharedByMe: boolean;
     sharedWithMe: boolean;
     inTimeline: boolean;
+    shareAllAlbums: boolean;
   }
 
   let partners: Array<PartnerSharing> = $state([]);
@@ -46,6 +47,7 @@
           sharedByMe: true,
           sharedWithMe: false,
           inTimeline: candidate.inTimeline ?? false,
+          shareAllAlbums: candidate.shareAllAlbums ?? false,
         },
       ];
     }
@@ -56,16 +58,18 @@
       if (existIndex === -1) {
         partners = [
           ...partners,
-          {
-            user: candidate,
-            sharedByMe: false,
-            sharedWithMe: true,
-            inTimeline: candidate.inTimeline ?? false,
-          },
+        {
+          user: candidate,
+          sharedByMe: false,
+          sharedWithMe: true,
+          inTimeline: candidate.inTimeline ?? false,
+          shareAllAlbums: candidate.shareAllAlbums ?? false,
+        },
         ];
       } else {
         partners[existIndex].sharedWithMe = true;
         partners[existIndex].inTimeline = candidate.inTimeline ?? false;
+        partners[existIndex].shareAllAlbums = candidate.shareAllAlbums ?? false;
       }
     }
   };
@@ -108,11 +112,21 @@
 
   const handleShowOnTimelineChanged = async (partner: PartnerSharing, inTimeline: boolean) => {
     try {
-      await updatePartner({ id: partner.user.id, partnerUpdateDto: { inTimeline } });
+      await updatePartner({ id: partner.user.id, partnerUpdateDto: { inTimeline, shareAllAlbums: partner.shareAllAlbums } });
 
       partner.inTimeline = inTimeline;
     } catch (error) {
       handleError(error, $t('errors.unable_to_update_timeline_display_status'));
+    }
+  };
+
+  const handleShareAllAlbumsChanged = async (partner: PartnerSharing, shareAllAlbums: boolean) => {
+    try {
+      await updatePartner({ id: partner.user.id, partnerUpdateDto: { inTimeline: partner.inTimeline, shareAllAlbums } });
+
+      partner.shareAllAlbums = shareAllAlbums;
+    } catch (error) {
+      handleError(error, $t('errors.unable_to_update_share_all_albums_status'));
     }
   };
 </script>
@@ -180,7 +194,14 @@
               title={$t('show_in_timeline')}
               subtitle={$t('show_in_timeline_setting_description')}
               bind:checked={partner.inTimeline}
-              onToggle={(isChecked) => handleShowOnTimelineChanged(partner, isChecked)}
+              onToggle={(isChecked: boolean) => handleShowOnTimelineChanged(partner, isChecked)}
+            />
+
+            <SettingSwitch
+              title={$t('share_all_albums')}
+              subtitle={$t('share_all_albums_setting_description')}
+              bind:checked={partner.shareAllAlbums}
+              onToggle={(isChecked: boolean) => handleShareAllAlbumsChanged(partner, isChecked)}
             />
           {/if}
         </div>

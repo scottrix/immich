@@ -43,8 +43,44 @@ export class PartnerService extends BaseService {
     await this.requireAccess({ auth, permission: Permission.PartnerUpdate, ids: [sharedById] });
     const partnerId: PartnerIds = { sharedById, sharedWithId: auth.user.id };
 
-    const entity = await this.partnerRepository.update(partnerId, { inTimeline: dto.inTimeline });
+    const entity = await this.partnerRepository.update(partnerId, { 
+      inTimeline: dto.inTimeline,
+      shareAllAlbums: dto.shareAllAlbums
+    });
+    
+    // If shareAllAlbums is being enabled, share all albums with the partner
+    if (dto.shareAllAlbums) {
+      await this.shareAllAlbumsWithPartner(auth, sharedById);
+    }
+    
     return this.mapPartner(entity, PartnerDirection.SharedWith);
+  }
+
+  private async shareAllAlbumsWithPartner(auth: AuthDto, partnerId: string): Promise<void> {
+    // Get all albums owned by the current user
+    const albums = await this.albumRepository.getOwned(auth.user.id);
+    
+    // Share each album with the partner
+    for (const album of albums) {
+      // Check if the album is already shared with the partner
+      const existingShare = album.albumUsers?.find(user => user.user.id === partnerId);
+      
+      // If not already shared, add the partner as an editor
+      if (!existingShare) {
+        try {
+          await this.albumUserRepository.create({
+            albumId: album.id,
+            userId: partnerId,
+            role: 'editor'
+          });
+        } catch (error) {
+          // Ignore duplicate key errors (album already shared)
+          if (!(error instanceof Error && error.message.includes('duplicate key'))) {
+            throw error;
+          }
+        }
+      }
+    }
   }
 
   private mapPartner(partner: Partner, direction: PartnerDirection): PartnerResponseDto {
@@ -52,6 +88,10 @@ export class PartnerService extends BaseService {
     const sharedUser = direction === PartnerDirection.SharedBy ? partner.sharedWith : partner.sharedBy;
     const user = mapUser(sharedUser);
 
-    return { ...user, inTimeline: partner.inTimeline };
+    return { 
+      ...user, 
+      inTimeline: partner.inTimeline,
+      shareAllAlbums: partner.shareAllAlbums
+    };
   }
 }

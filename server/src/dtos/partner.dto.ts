@@ -13,7 +13,8 @@ const PartnerCreateSchema = z
 
 const PartnerUpdateSchema = z
   .object({
-    inTimeline: z.boolean().describe('Show partner assets in timeline'),
+    inTimeline: z.boolean().optional().describe('Show partner assets in timeline'),
+    shareAllAlbums: z.boolean().optional().describe('Share all albums with partner'),
   })
   .meta({ id: 'PartnerUpdateDto' });
 
@@ -25,6 +26,7 @@ const PartnerSearchSchema = z
 
 const PartnerResponseSchema = UserResponseSchema.extend({
   inTimeline: z.boolean().optional().describe('Show in timeline'),
+  shareAllAlbums: z.boolean().optional().describe('Share all albums with partner'),
 })
   .describe('Partner response')
   .meta({ id: 'PartnerResponseDto' });

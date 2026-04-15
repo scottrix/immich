@@ -59,7 +59,7 @@ export class PartnerRepository {
       .executeTakeFirstOrThrow();
   }
 
-  @GenerateSql({ params: [{ sharedWithId: DummyValue.UUID, sharedById: DummyValue.UUID }, { inTimeline: true }] })
+  @GenerateSql({ params: [{ sharedWithId: DummyValue.UUID, sharedById: DummyValue.UUID }, { inTimeline: true, shareAllAlbums: true }] })
   update({ sharedWithId, sharedById }: PartnerIds, values: Updateable<PartnerTable>) {
     return this.db
       .updateTable('partner')

@@ -50,7 +50,7 @@ export class PartnerController {
   @Authenticated({ permission: Permission.PartnerUpdate })
   @Endpoint({
     summary: 'Update a partner',
-    description: "Specify whether a partner's assets should appear in the user's timeline.",
+    description: "Specify whether a partner's assets should appear in the user's timeline and whether to share all albums with the partner.",
     history: new HistoryBuilder().added('v1').beta('v1').stable('v2'),
   })
   updatePartner(

@@ -44,6 +44,9 @@ export class PartnerTable {
   @Column({ type: 'boolean', default: false })
   inTimeline!: Generated<boolean>;
 
+  @Column({ type: 'boolean', default: false })
+  shareAllAlbums!: Generated<boolean>;
+
   @UpdateIdColumn({ index: true })
   updateId!: Generated<string>;
 }
