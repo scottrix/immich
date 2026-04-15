@@ -74,7 +74,7 @@ describe(PartnerController.name, () => {
     it(`should require id to be a uuid`, async () => {
       const { status, body } = await request(ctx.getHttpServer())
         .put(`/partners/invalid`)
-        .send({ inTimeline: true })
+        .send({ inTimeline: true, shareAllAlbums: false })
         .set('Authorization', `Bearer token`);
       expect(status).toBe(400);
       expect(body).toEqual(errorDto.badRequest(['[id] Invalid UUID']));

@@ -109,7 +109,7 @@ describe(PartnerService.name, () => {
       const user2 = UserFactory.create();
       const auth = AuthFactory.create();
 
-      await expect(sut.update(auth, user2.id, { inTimeline: false })).rejects.toBeInstanceOf(BadRequestException);
+      await expect(sut.update(auth, user2.id, { inTimeline: false, shareAllAlbums: false })).rejects.toBeInstanceOf(BadRequestException);
     });
 
     it('should update partner', async () => {
@@ -121,10 +121,10 @@ describe(PartnerService.name, () => {
       mocks.access.partner.checkUpdateAccess.mockResolvedValue(new Set([user2.id]));
       mocks.partner.update.mockResolvedValue(getForPartner(partner));
 
-      await expect(sut.update(auth, user2.id, { inTimeline: true })).resolves.toBeDefined();
+      await expect(sut.update(auth, user2.id, { inTimeline: true, shareAllAlbums: false })).resolves.toBeDefined();
       expect(mocks.partner.update).toHaveBeenCalledWith(
         { sharedById: user2.id, sharedWithId: user1.id },
-        { inTimeline: true },
+        { inTimeline: true, shareAllAlbums: false },
       );
     });
   });

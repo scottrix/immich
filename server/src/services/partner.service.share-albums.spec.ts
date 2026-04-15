@@ -1,12 +1,11 @@
 import { BadRequestException } from '@nestjs/common';
-import { AlbumUserRole, PartnerDirection } from 'src/enum';
+import { AlbumUserRole } from 'src/enum';
+import { PartnerDirection } from 'src/repositories/partner.repository';
 import { PartnerIds } from 'src/repositories/partner.repository';
 import { PartnerService } from 'src/services/partner.service';
 import { AlbumFactory } from 'test/factories/album.factory';
 import { AuthFactory } from 'test/factories/auth.factory';
-import { PartnerFactory } from 'test/factories/partner.factory';
 import { UserFactory } from 'test/factories/user.factory';
-import { getForAlbum, getForPartner } from 'test/mappers';
 import { newTestService, ServiceMocks } from 'test/utils';
 
 describe(PartnerService.name + ' - Share All Albums', () => {
@@ -25,31 +24,55 @@ describe(PartnerService.name + ' - Share All Albums', () => {
     it('should update partner with shareAllAlbums setting', async () => {
       const user1 = UserFactory.create();
       const user2 = UserFactory.create();
-      const partner = PartnerFactory.from().sharedBy(user1).sharedWith(user2).build();
       const auth = AuthFactory.create({ id: user1.id });
 
       mocks.access.partner.checkUpdateAccess.mockResolvedValue(new Set([user2.id]));
-      mocks.partner.update.mockResolvedValue(getForPartner(partner));
+      mocks.partner.update.mockResolvedValue({
+        sharedById: user1.id,
+        sharedBy: user1,
+        sharedWithId: user2.id,
+        sharedWith: user2,
+        createId: 'create-id',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        updateId: 'update-id',
+        inTimeline: true,
+        shareAllAlbums: false,
+      });
 
-      await expect(sut.update(auth, user2.id, { inTimeline: true, shareAllAlbums: true })).resolves.toBeDefined();
+      await expect(sut.update(auth, user2.id, { inTimeline: true, shareAllAlbums: false })).resolves.toBeDefined();
       expect(mocks.partner.update).toHaveBeenCalledWith(
         { sharedById: user2.id, sharedWithId: user1.id },
-        { inTimeline: true, shareAllAlbums: true },
+        { inTimeline: true, shareAllAlbums: false },
       );
     });
 
     it('should share all albums when shareAllAlbums is enabled', async () => {
       const user1 = UserFactory.create();
       const user2 = UserFactory.create();
-      const partner = PartnerFactory.from().sharedBy(user1).sharedWith(user2).build();
-      const album1 = AlbumFactory.from().owner(user1).build();
-      const album2 = AlbumFactory.from().owner(user1).build();
+      const album1 = AlbumFactory.create({ ownerId: user1.id });
+      const album2 = AlbumFactory.create({ ownerId: user1.id });
       const auth = AuthFactory.create({ id: user1.id });
 
       mocks.access.partner.checkUpdateAccess.mockResolvedValue(new Set([user2.id]));
-      mocks.partner.update.mockResolvedValue(getForPartner(partner));
-      mocks.album.getOwned.mockResolvedValue([getForAlbum(album1), getForAlbum(album2)]);
-      mocks.albumUser.create.mockResolvedValue();
+      mocks.partner.update.mockResolvedValue({
+        sharedById: user1.id,
+        sharedBy: user1,
+        sharedWithId: user2.id,
+        sharedWith: user2,
+        createId: 'create-id',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        updateId: 'update-id',
+        inTimeline: true,
+        shareAllAlbums: true,
+      });
+      mocks.album.getOwned.mockResolvedValue([album1, album2]);
+      mocks.albumUser.create.mockImplementation(() => Promise.resolve({
+        userId: user2.id,
+        albumId: 'test-album-id',
+        role: AlbumUserRole.Editor
+      }));
 
       await sut.update(auth, user2.id, { inTimeline: true, shareAllAlbums: true });
 
@@ -70,15 +93,30 @@ describe(PartnerService.name + ' - Share All Albums', () => {
     it('should not share albums that are already shared with the partner', async () => {
       const user1 = UserFactory.create();
       const user2 = UserFactory.create();
-      const partner = PartnerFactory.from().sharedBy(user1).sharedWith(user2).build();
-      const album1 = AlbumFactory.from().owner(user1).build();
-      const album2 = AlbumFactory.from().owner(user1).build();
-      album2.albumUsers = [{ user: user2, role: AlbumUserRole.Editor }];
+      const album1 = AlbumFactory.create({ ownerId: user1.id });
+      const album2 = AlbumFactory.create({ ownerId: user1.id });
+      album2.albumUsers = [{ user: user2, role: AlbumUserRole.Editor, userId: user2.id, albumId: album2.id, createdAt: new Date(), updatedAt: new Date(), updateId: 'update-id', createId: 'create-id' }];
       const auth = AuthFactory.create({ id: user1.id });
 
       mocks.access.partner.checkUpdateAccess.mockResolvedValue(new Set([user2.id]));
-      mocks.partner.update.mockResolvedValue(getForPartner(partner));
-      mocks.album.getOwned.mockResolvedValue([getForAlbum(album1), getForAlbum(album2)]);
+      mocks.partner.update.mockResolvedValue({
+        sharedById: user1.id,
+        sharedBy: user1,
+        sharedWithId: user2.id,
+        sharedWith: user2,
+        createId: 'create-id',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        updateId: 'update-id',
+        inTimeline: true,
+        shareAllAlbums: true,
+      });
+      mocks.album.getOwned.mockResolvedValue([album1, album2]);
+      mocks.albumUser.create.mockImplementation(() => Promise.resolve({
+        userId: user2.id,
+        albumId: 'test-album-id',
+        role: AlbumUserRole.Editor
+      }));
 
       await sut.update(auth, user2.id, { inTimeline: true, shareAllAlbums: true });
 
@@ -94,13 +132,23 @@ describe(PartnerService.name + ' - Share All Albums', () => {
     it('should handle duplicate key errors when sharing albums', async () => {
       const user1 = UserFactory.create();
       const user2 = UserFactory.create();
-      const partner = PartnerFactory.from().sharedBy(user1).sharedWith(user2).build();
-      const album1 = AlbumFactory.from().owner(user1).build();
+      const album1 = AlbumFactory.create({ ownerId: user1.id });
       const auth = AuthFactory.create({ id: user1.id });
 
       mocks.access.partner.checkUpdateAccess.mockResolvedValue(new Set([user2.id]));
-      mocks.partner.update.mockResolvedValue(getForPartner(partner));
-      mocks.album.getOwned.mockResolvedValue([getForAlbum(album1)]);
+      mocks.partner.update.mockResolvedValue({
+        sharedById: user1.id,
+        sharedBy: user1,
+        sharedWithId: user2.id,
+        sharedWith: user2,
+        createId: 'create-id',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        updateId: 'update-id',
+        inTimeline: true,
+        shareAllAlbums: true,
+      });
+      mocks.album.getOwned.mockResolvedValue([album1]);
       mocks.albumUser.create.mockRejectedValue(new Error('duplicate key value violates unique constraint'));
 
       await expect(sut.update(auth, user2.id, { inTimeline: true, shareAllAlbums: true })).resolves.toBeDefined();
@@ -111,13 +159,23 @@ describe(PartnerService.name + ' - Share All Albums', () => {
     it('should re-throw non-duplicate errors when sharing albums', async () => {
       const user1 = UserFactory.create();
       const user2 = UserFactory.create();
-      const partner = PartnerFactory.from().sharedBy(user1).sharedWith(user2).build();
-      const album1 = AlbumFactory.from().owner(user1).build();
+      const album1 = AlbumFactory.create({ ownerId: user1.id });
       const auth = AuthFactory.create({ id: user1.id });
 
       mocks.access.partner.checkUpdateAccess.mockResolvedValue(new Set([user2.id]));
-      mocks.partner.update.mockResolvedValue(getForPartner(partner));
-      mocks.album.getOwned.mockResolvedValue([getForAlbum(album1)]);
+      mocks.partner.update.mockResolvedValue({
+        sharedById: user1.id,
+        sharedBy: user1,
+        sharedWithId: user2.id,
+        sharedWith: user2,
+        createId: 'create-id',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        updateId: 'update-id',
+        inTimeline: true,
+        shareAllAlbums: true,
+      });
+      mocks.album.getOwned.mockResolvedValue([album1]);
       mocks.albumUser.create.mockRejectedValue(new Error('some other error'));
 
       await expect(sut.update(auth, user2.id, { inTimeline: true, shareAllAlbums: true })).rejects.toThrow('some other error');

@@ -3,7 +3,7 @@ import { Partner } from 'src/database';
 import { AuthDto } from 'src/dtos/auth.dto';
 import { PartnerCreateDto, PartnerResponseDto, PartnerSearchDto, PartnerUpdateDto } from 'src/dtos/partner.dto';
 import { mapUser } from 'src/dtos/user.dto';
-import { Permission } from 'src/enum';
+import { AlbumUserRole, Permission } from 'src/enum';
 import { PartnerDirection, PartnerIds } from 'src/repositories/partner.repository';
 import { BaseService } from 'src/services/base.service';
 
@@ -71,7 +71,7 @@ export class PartnerService extends BaseService {
           await this.albumUserRepository.create({
             albumId: album.id,
             userId: partnerId,
-            role: 'editor'
+            role: AlbumUserRole.Editor
           });
         } catch (error) {
           // Ignore duplicate key errors (album already shared)

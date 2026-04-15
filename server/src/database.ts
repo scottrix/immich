@@ -216,6 +216,7 @@ export type Partner = {
   updatedAt: Date;
   updateId: string;
   inTimeline: boolean;
+  shareAllAlbums: boolean;
 };
 
 export type Place = {
